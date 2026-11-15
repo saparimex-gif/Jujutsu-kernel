@@ -38,10 +38,10 @@ jobs:
           # Tambahkan config HID
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> arch/arm64/configs/blossom_defconfig
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> arch/arm64/configs/blossom_defconfig
-          
-          # MATIKAN FITUR YANG BIKIN ERROR
-          echo "# CONFIG_ANDROID_SIMPLE_LMK is not set" >> arch/arm64/configs/blossom_defconfig
-          echo "# CONFIG_PROCESS_RECLAIM is not set" >> arch/arm64/configs/blossom_defconfig
+
+          # PAKSA MATIKAN FITUR BERMASALAH DENGAN scripts/config
+          scripts/config --file arch/arm64/configs/blossom_defconfig --disable ANDROID_SIMPLE_LMK
+          scripts/config --file arch/arm64/configs/blossom_defconfig --disable PROCESS_RECLAIM
 
       - name: Build Kernel
         run: |
