@@ -29,12 +29,19 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
 
-      - name: Apply NetHunter Configs
+      - name: Apply NetHunter & Fix Configs
         run: |
+          # Ambil config NetHunter
           wget -q https://raw.githubusercontent.com/deepcomon/kernel-nethunter-for-Redmi-9A/main/nethunter_fragment.cfg
           cat nethunter_fragment.cfg >> arch/arm64/configs/blossom_defconfig
+          
+          # Tambahkan config HID
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> arch/arm64/configs/blossom_defconfig
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> arch/arm64/configs/blossom_defconfig
+          
+          # MATIKAN FITUR YANG BIKIN ERROR
+          echo "# CONFIG_ANDROID_SIMPLE_LMK is not set" >> arch/arm64/configs/blossom_defconfig
+          echo "# CONFIG_PROCESS_RECLAIM is not set" >> arch/arm64/configs/blossom_defconfig
 
       - name: Build Kernel
         run: |
@@ -43,13 +50,11 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # MENGGUNAKAN LD=ld.lld AGAR TIDAK ERROR RELOCATION
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
 
       - name: AUTO-DETECT & Package
         run: |
-          # Jika build gagal, hentikan script agar tidak menghasilkan zip kosong
           if ! ls out/arch/arm64/boot/Image* 1> /dev/null 2>&1; then
             echo "KERNEL BUILD FAILED! No Image found."
             exit 1
