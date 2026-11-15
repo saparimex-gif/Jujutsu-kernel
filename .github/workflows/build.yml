@@ -33,10 +33,8 @@ jobs:
 
       - name: Apply NetHunter Configs
         run: |
-          # Mengambil patch NetHunter untuk Redmi 9A dari repo deepcomon
           wget -q https://raw.githubusercontent.com/deepcomon/kernel-nethunter-for-Redmi-9A/main/nethunter_fragment.cfg
           cat nethunter_fragment.cfg >> arch/arm64/configs/blossom_defconfig
-          # Menambahkan konfigurasi HID Keyboard & USB gadget
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> arch/arm64/configs/blossom_defconfig
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> arch/arm64/configs/blossom_defconfig
 
@@ -52,14 +50,12 @@ jobs:
 
       - name: AUTO-DETECT & Package
         run: |
-          # INI DIA JURUS AUTO-DETECT NYA:
-          # Mencari file apapun yang berawalan "Image" di folder output
           find out/arch/arm64/boot/ -name "Image*" -exec cp {} anykernel/ \;
           cd anykernel
           zip -r9 ../NetHunter-Kernel-Auto.zip * -x .git README.md *placeholder
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: NetHunter-Kernel-Auto
           path: NetHunter-Kernel-Auto.zip
