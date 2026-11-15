@@ -6,8 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Build Kernel with NetHunter
-        uses: dabao1955/kernel_build_action@main
+      - name: Build NetHunter Kernel
+        uses: yanhuo26/action-build-kernel@main
         with:
           kernel-url: https://github.com/Iam-nishan/jujutsu-kernel
           kernel-branch: V6
@@ -15,5 +15,3 @@ jobs:
           arch: arm64
           android-version: 15
           nethunter: true
-          nethunter-patch: true
-          extra-make-args: '["INSTALL_MOD_PATH=./out/modules"]'
