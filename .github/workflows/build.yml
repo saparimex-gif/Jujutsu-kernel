@@ -16,3 +16,4 @@ jobs:
           android-version: 15
           nethunter: true
           nethunter-patch: true
+          extra-make-args: '["INSTALL_MOD_PATH=./out/modules"]'
