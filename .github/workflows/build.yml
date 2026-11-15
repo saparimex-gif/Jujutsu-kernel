@@ -38,10 +38,10 @@ jobs:
           # Tambahkan config HID
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> arch/arm64/configs/blossom_defconfig
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> arch/arm64/configs/blossom_defconfig
-
-          # PAKSA MATIKAN FITUR BERMASALAH DENGAN scripts/config
-          scripts/config --file arch/arm64/configs/blossom_defconfig --disable ANDROID_SIMPLE_LMK
-          scripts/config --file arch/arm64/configs/blossom_defconfig --disable PROCESS_RECLAIM
+          
+          # AKTIFKAN FITUR YANG MENYEBABKAN ERROR LINKER
+          echo "CONFIG_ANDROID_SIMPLE_LMK=y" >> arch/arm64/configs/blossom_defconfig
+          echo "CONFIG_PROCESS_RECLAIM=y" >> arch/arm64/configs/blossom_defconfig
 
       - name: Build Kernel
         run: |
