@@ -18,4 +18,4 @@ jobs:
           nethunter-patch: true
           anykernel3: true
           anykernel3-url: https://github.com/Iam-nishan/anykernel.git
-          dtb: true
+          kernel-image: Image.gz-dtb
