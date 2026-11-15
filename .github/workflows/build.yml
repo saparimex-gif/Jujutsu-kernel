@@ -19,7 +19,6 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          # Kita tambahkan gcc-aarch64-linux-gnu di sini
           sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev zip unzip python3 cpio git wget gcc-aarch64-linux-gnu
 
       - name: Clone AnyKernel3
@@ -44,12 +43,18 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # Paksa menggunakan Clang saat compile
-          make O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
-          make O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
+          # MENGGUNAKAN LD=ld.lld AGAR TIDAK ERROR RELOCATION
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
 
       - name: AUTO-DETECT & Package
         run: |
+          # Jika build gagal, hentikan script agar tidak menghasilkan zip kosong
+          if ! ls out/arch/arm64/boot/Image* 1> /dev/null 2>&1; then
+            echo "KERNEL BUILD FAILED! No Image found."
+            exit 1
+          fi
+          
           find out/arch/arm64/boot/ -name "Image*" -exec cp {} anykernel/ \;
           cd anykernel
           zip -r9 ../NetHunter-Kernel-Auto.zip * -x .git README.md *placeholder
