@@ -27,9 +27,8 @@ jobs:
 
       - name: Download Clang Toolchain
         run: |
-          mkdir clang && cd clang
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r487747c.tar.gz
-          tar -xzf clang-r487747c.tar.gz && cd ..
+          # Menggunakan mirror LineageOS yang lebih stabil daripada link Google
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
 
       - name: Apply NetHunter Configs
         run: |
