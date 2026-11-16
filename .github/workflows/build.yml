@@ -29,11 +29,15 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
 
-      - name: Patch Source Code (Jurus Komentar Ganda)
+      - name: Patch Source Code (Jurus Pencarian Global)
         run: |
-          # HANYA beri komentar // pada fungsi yang benar-benar tidak ada. 
-          # JANGAN sentuh totalram_pages karena compiler sudah tahu itu.
+          # 1. Cari semua file yang mengandung "totalram_pages", lalu ubah semuanya menjadi "_totalram_pages"
+          grep -rl "totalram_pages" . | xargs sed -i 's/\btotalram_pages\b/_totalram_pages/g'
+          
+          # 2. Beri komentar // pada fungsi simple_lmk yang hilang
           sed -i 's/^\(\s*simple_lmk_mm_freed.*\)/\/\/ \1/g' kernel/fork.c
+          
+          # 3. Beri komentar // pada fungsi reclaim_pages yang hilang
           sed -i 's/^\(\s*reclaim_pages_from_list.*\)/\/\/ \1/g' fs/proc/task_mmu.c
 
       - name: Build Kernel & Fix Configs
