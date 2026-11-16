@@ -46,7 +46,6 @@ jobs:
           
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
           
-          # JURUS BARU: Matikan WERROR (Warning as Error) & LTO
           scripts/config --file out/.config -d LTO_CLANG -d LTO_CLANG_FULL -d LTO_CLANG_THIN -e LTO_NONE
           scripts/config --file out/.config -d WERROR
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> out/.config
@@ -54,7 +53,8 @@ jobs:
           
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
           
-          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
+          # JURUS BARU: Abaikan peringatan C90 dan pastikan Warning bukan Error
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- KCFLAGS="-Wno-error -Wno-declaration-after-statement" -j$(nproc) 2>&1 | tee build.log
 
       - name: AUTO-DETECT & Package
         run: |
