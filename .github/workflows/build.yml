@@ -36,19 +36,25 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # 1. Generate config
+          # 1. Bersihkan folder out agar tidak ada cache dari percobaan sebelumnya
+          rm -rf out
+          
+          # 2. Generate config awal
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
           
-          # 2. MATIKAN FITUR BIANG KEROK DENGAN PAKSA (-d)
-          scripts/config --file out/.config -d LTO_CLANG -e LTO_NONE
-          scripts/config --file out/.config -d ANDROID_SIMPLE_LMK
-          scripts/config --file out/.config -d PROCESS_RECLAIM
+          # 3. Sunting config (Matikan LTO & Nyalakan Simple LMK)
+          scripts/config --file out/.config -d LTO_CLANG -d LTO_CLANG_FULL -d LTO_CLANG_THIN -e LTO_NONE
+          scripts/config --file out/.config -e ANDROID_SIMPLE_LMK -e PROCESS_RECLAIM
           
-          # 3. Tambahkan Config NetHunter & HID
+          # 4. KUNCI KONFIGURASI (Langkah yang tadi terlewat!)
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          
+          # 5. Tambahkan Config NetHunter & HID
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> out/.config
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> out/.config
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
           
-          # 4. Mulai Kompilasi
+          # 6. Mulai Kompilasi
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
 
       - name: AUTO-DETECT & Package
