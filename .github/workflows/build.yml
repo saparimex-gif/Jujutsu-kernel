@@ -29,32 +29,37 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
 
-      - name: Build Kernel & Fix Errors
+      - name: Patch Source Code
+        run: |
+          # 1. Perbaiki nama totalram_pages menjadi _totalram_pages
+          sed -i 's/\btotalram_pages\b/_totalram_pages/g' kernel/fork.c mm/oom_kill.c mm/page_alloc.c
+          
+          # 2. Hapus panggilan fungsi simple_lmk_mm_freed yang tidak ada
+          sed -i 's/^\s*simple_lmk_mm_freed(mm);.*$//g' kernel/fork.c
+          
+          # 3. Hapus panggilan fungsi reclaim_pages_from_list yang tidak ada
+          sed -i 's/^\s*reclaim_pages_from_list(.*$//g' fs/proc/task_mmu.c
+
+      - name: Build Kernel & Fix Configs
         run: |
           export PATH=$PWD/clang/bin:$PATH
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # 1. Bersihkan folder out agar tidak ada cache dari percobaan sebelumnya
           rm -rf out
           
-          # 2. Generate config awal
+          # Generate config
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
           
-          # 3. Sunting config (Matikan LTO & Nyalakan Simple LMK)
+          # Matikan LTO & aktifkan HID
           scripts/config --file out/.config -d LTO_CLANG -d LTO_CLANG_FULL -d LTO_CLANG_THIN -e LTO_NONE
-          scripts/config --file out/.config -e ANDROID_SIMPLE_LMK -e PROCESS_RECLAIM
-          
-          # 4. KUNCI KONFIGURASI (Langkah yang tadi terlewat!)
-          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-          
-          # 5. Tambahkan Config NetHunter & HID
           echo "CONFIG_USB_CONFIGFS_F_HID=y" >> out/.config
           echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> out/.config
+          
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
           
-          # 6. Mulai Kompilasi
+          # Mulai Kompilasi
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
 
       - name: AUTO-DETECT & Package
