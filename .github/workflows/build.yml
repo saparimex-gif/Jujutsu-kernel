@@ -29,10 +29,10 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
 
-      - name: Patch Source Code (Jurus Pencarian Global)
+      - name: Patch Source Code (Jurus Pemanggil)
         run: |
-          # 1. Cari semua file yang mengandung "totalram_pages", lalu ubah semuanya menjadi "_totalram_pages"
-          grep -rl "totalram_pages" . | xargs sed -i 's/\btotalram_pages\b/_totalram_pages/g'
+          # 1. Ubah pemanggil di fork.c dan oom_kill.c agar sesuai dengan definisi asli (_totalram_pages)
+          sed -i 's/\btotalram_pages\b/_totalram_pages/g' kernel/fork.c mm/oom_kill.c
           
           # 2. Beri komentar // pada fungsi simple_lmk yang hilang
           sed -i 's/^\(\s*simple_lmk_mm_freed.*\)/\/\/ \1/g' kernel/fork.c
