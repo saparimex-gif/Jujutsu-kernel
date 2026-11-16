@@ -1,24 +1,69 @@
-name: Build NetHunter Kernel
+name: Build NetHunter Kernel Auto-Detect
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    # Kita pakai Ubuntu 20.04 agar tidak error libpcre3
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Build NetHunter Kernel
-        uses: dabao1955/kernel_build_action@main
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v3
         with:
-          kernel-url: https://github.com/Iam-nishan/jujutsu-kernel
-          kernel-branch: V6
-          config: blossom_defconfig
-          arch: arm64
-          android-version: 15
-          nethunter: true
-          nethunter-patch: true
-          anykernel3: true
-          anykernel3-url: https://github.com/Iam-nishan/anykernel.git
-          kernel-image: Image.gz-dtb
-          disable-lto: true
-          extra-make-args: '["CONFIG_ANDROID_SIMPLE_LMK=n", "CONFIG_PROCESS_RECLAIM=n"]'
+          repository: Iam-nishan/jujutsu-kernel
+          ref: V6
+          submodules: false
+
+      - name: Remove broken submodules
+        run: rm -f .gitmodules
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev zip unzip python3 cpio git wget gcc-aarch64-linux-gnu
+
+      - name: Clone AnyKernel3
+        run: |
+          git clone https://github.com/Iam-nishan/anykernel.git anykernel
+
+      - name: Download Clang Toolchain
+        run: |
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git clang
+
+      - name: Build Kernel & Fix Errors
+        run: |
+          export PATH=$PWD/clang/bin:$PATH
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          
+          # 1. Generate config
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- blossom_defconfig
+          
+          # 2. MATIKAN FITUR BIANG KEROK DENGAN PAKSA (-d)
+          scripts/config --file out/.config -d LTO_CLANG -e LTO_NONE
+          scripts/config --file out/.config -d ANDROID_SIMPLE_LMK
+          scripts/config --file out/.config -d PROCESS_RECLAIM
+          
+          # 3. Tambahkan Config NetHunter & HID
+          echo "CONFIG_USB_CONFIGFS_F_HID=y" >> out/.config
+          echo "CONFIG_USB_CONFIGFS_F_MTP=y" >> out/.config
+          
+          # 4. Mulai Kompilasi
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) 2>&1 | tee build.log
+
+      - name: AUTO-DETECT & Package
+        run: |
+          if ! ls out/arch/arm64/boot/Image* 1> /dev/null 2>&1; then
+            echo "KERNEL BUILD FAILED! No Image found."
+            exit 1
+          fi
+          
+          find out/arch/arm64/boot/ -name "Image*" -exec cp {} anykernel/ \;
+          cd anykernel
+          zip -r9 ../NetHunter-Kernel-Auto.zip * -x .git README.md *placeholder
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetHunter-Kernel-Auto
+          path: NetHunter-Kernel-Auto.zip
